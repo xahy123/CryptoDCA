@@ -1,0 +1,103 @@
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.layout {
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #1890ff 0%, #52c41a 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0 24px;
+}
+
+.header .ant-space {
+  align-items: center;
+}
+
+.ant-layout-footer a {
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.ant-layout-footer a:hover {
+  color: #40a9ff !important;
+  transform: translateY(-1px);
+}
+
+.site-layout-content {
+  background: #fff;
+  border-radius: 8px;
+}
+
+/* 表格样式 */
+.crypto-list {
+  margin-bottom: 24px;
+}
+
+.crypto-list .ant-table-thead > tr > th {
+  background-color: #f0f2f5;
+  font-weight: 600;
+}
+
+/* 表单样式 */
+.add-crypto-form,
+.add-transaction-form,
+.update-price-form {
+  height: 100%;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .header {
+    padding: 0 16px;
+  }
+  
+  .site-layout-content {
+    padding: 16px !important;
+  }
+}
+
+/* 状态标签颜色 */
+.ant-tag-green {
+  color: #52c41a;
+  background: #f6ffed;
+  border-color: #b7eb8f;
+}
+
+.ant-tag-red {
+  color: #f5222d;
+  background: #fff1f0;
+  border-color: #ffa39e;
+}
+
+.ant-tag-blue {
+  color: #1890ff;
+  background: #e6f7ff;
+  border-color: #91d5ff;
+}
+
+/* 表格居中样式 */
+.ant-table-cell {
+  text-align: center !important;
+}
+
+.ant-table-thead > tr > th {
+  text-align: center !important;
+}
+
+/* API代币列表样式 */
+.api-token-list {
+  margin-bottom: 20px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
