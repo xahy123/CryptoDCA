@@ -350,9 +350,22 @@ export function CryptoProvider({ children }) {
   
   // 页面关闭时提示备份数据
   useEffect(() => {
+    let userInteracted = false;
+    
+    // 检测用户交互
+    const markUserInteraction = () => {
+      userInteracted = true;
+      console.log('用户已与页面交互，beforeunload提示已激活');
+    };
+    
     const handleBeforeUnload = (event) => {
-      // 只有当有数据时才提示
-      if (state.cryptoList.length > 0) {
+      console.log('beforeunload事件触发', {
+        cryptoListLength: state.cryptoList.length,
+        userInteracted
+      });
+      
+      // 只有当有数据且用户已交互时才提示
+      if (state.cryptoList.length > 0 && userInteracted) {
         const message = '您有重要的加密货币数据，建议在离开前导出备份。确定要离开吗？';
         event.preventDefault();
         event.returnValue = message; // 标准方式
@@ -360,11 +373,20 @@ export function CryptoProvider({ children }) {
       }
     };
     
-    // 添加事件监听器
+    // 添加用户交互监听器
+    const interactionEvents = ['click', 'keydown', 'scroll', 'touchstart'];
+    interactionEvents.forEach(eventType => {
+      document.addEventListener(eventType, markUserInteraction, { once: true });
+    });
+    
+    // 添加beforeunload事件监听器
     window.addEventListener('beforeunload', handleBeforeUnload);
     
     // 清理函数
     return () => {
+      interactionEvents.forEach(eventType => {
+        document.removeEventListener(eventType, markUserInteraction);
+      });
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [state.cryptoList.length]); // 依赖数据数量变化
