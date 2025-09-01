@@ -1,15 +1,18 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Table, Tag, Button, Space, Modal, message } from 'antd';
-import { DeleteOutlined, ReloadOutlined, PlusOutlined, DollarOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
+import { Table, Tag, Button, Space, Modal, message, Tooltip } from 'antd';
+import { DeleteOutlined, ReloadOutlined, PlusOutlined, DollarOutlined, DownloadOutlined, UploadOutlined, EditOutlined, UserOutlined } from '@ant-design/icons';
 import { useCrypto } from '../context/CryptoContext';
 import { CryptoStatus } from '../models/CryptoData';
 import AddCryptoForm from './AddCryptoForm';
 import AddTransactionForm from './AddTransactionForm';
+import EditPriceModal from './EditPriceModal';
 
 const CryptoList = () => {
   const { cryptoList, deleteCrypto, updateAllPricesFromApi, loading, exportData, importData } = useCrypto();
   const [isAddCryptoModalVisible, setIsAddCryptoModalVisible] = useState(false);
   const [isAddTransactionModalVisible, setIsAddTransactionModalVisible] = useState(false);
+  const [isEditPriceModalVisible, setIsEditPriceModalVisible] = useState(false);
+  const [selectedCryptoForEdit, setSelectedCryptoForEdit] = useState(null);
   const fileInputRef = useRef(null);
   
   // 数字格式化函数
@@ -60,6 +63,18 @@ const CryptoList = () => {
     event.target.value = '';
   };
   
+  // 处理编辑价格
+  const handleEditPrice = (crypto) => {
+    setSelectedCryptoForEdit(crypto);
+    setIsEditPriceModalVisible(true);
+  };
+  
+  // 关闭编辑价格模态框
+  const handleCloseEditPriceModal = () => {
+    setIsEditPriceModalVisible(false);
+    setSelectedCryptoForEdit(null);
+  };
+  
   // 定义表格列
   const columns = [
     {
@@ -68,7 +83,14 @@ const CryptoList = () => {
       key: 'symbol',
       render: (text, record) => (
         <span>
-          <strong>{text}</strong>
+          <Space size="small">
+            <strong>{text}</strong>
+            {record.isCustom && (
+              <Tooltip title="自定义代币">
+                <UserOutlined style={{ color: '#faad14', fontSize: '12px' }} />
+              </Tooltip>
+            )}
+          </Space>
           <div style={{ fontSize: '12px', color: '#888' }}>{record.name}</div>
         </span>
       ),
@@ -158,11 +180,20 @@ const CryptoList = () => {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
+          {record.isCustom && (
+            <Button 
+              type="text" 
+              icon={<EditOutlined />}
+              onClick={() => handleEditPrice(record)}
+              title="编辑价格"
+            />
+          )}
           <Button 
             type="text" 
             danger 
             icon={<DeleteOutlined />}
             onClick={() => deleteCrypto(record.id)}
+            title="删除"
           />
         </Space>
       ),
@@ -217,6 +248,11 @@ const CryptoList = () => {
         rowKey="id" 
         pagination={false}
         scroll={{ x: 'max-content' }}
+        locale={{
+          triggerDesc: '点击降序',
+          triggerAsc: '点击升序',
+          cancelSort: '取消排序'
+        }}
       />
       
       <Modal
@@ -238,6 +274,12 @@ const CryptoList = () => {
       >
         <AddTransactionForm onSuccess={() => setIsAddTransactionModalVisible(false)} />
       </Modal>
+      
+      <EditPriceModal
+        visible={isEditPriceModalVisible}
+        onCancel={handleCloseEditPriceModal}
+        crypto={selectedCryptoForEdit}
+      />
       
       {/* 隐藏的文件输入元素 */}
       <input

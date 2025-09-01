@@ -40,6 +40,7 @@ function cryptoReducer(state, action) {
         action.payload.symbol,
         action.payload.address,
         action.payload.chainId,
+        action.payload.isCustom || false,
       );
       console.log('添加的加密货币数据:', newCrypto);
       return {
@@ -212,9 +213,9 @@ export function CryptoProvider({ children }) {
   }, [state.cryptoList]);
 
   // 提供给组件使用的方法
-  const addCrypto = (name, symbol, address = '', chainId = '') => {
-    console.log('添加的加密货币数据:', name, symbol, address, chainId);
-    dispatch({ type: ActionTypes.ADD_CRYPTO, payload: { name, symbol, address, chainId } });
+  const addCrypto = (name, symbol, address = '', chainId = '', isCustom = false) => {
+    console.log('添加的加密货币数据:', name, symbol, address, chainId, isCustom);
+    dispatch({ type: ActionTypes.ADD_CRYPTO, payload: { name, symbol, address, chainId, isCustom } });
   };
   
   const updateCrypto = (crypto) => {

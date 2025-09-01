@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Button, Statistic, Row, Col, Divider, Typography, Modal } from 'antd';
-import { BarChartOutlined } from '@ant-design/icons';
+import { Card, Button, Statistic, Row, Col, Divider, Typography, Modal, Switch, Space, Tooltip } from 'antd';
+import { BarChartOutlined, SettingOutlined } from '@ant-design/icons';
 import { useCrypto } from '../context/CryptoContext';
 
 // 数字格式化函数
@@ -16,14 +16,19 @@ const { Title, Text } = Typography;
 
 const InvestmentSummary = () => {
   const { cryptoList } = useCrypto();
+  const [includeCustomTokens, setIncludeCustomTokens] = useState(false);
 
   // 计算总投资概况
   const calculateSummary = () => {
+    // 根据开关状态过滤代币列表
+    const filteredCryptoList = includeCustomTokens 
+      ? cryptoList 
+      : cryptoList.filter(crypto => !crypto.isCustom);
     let totalInvestment = 0;
     let totalCurrentValue = 0;
     let earliestTransactionDate = null;
 
-    cryptoList.forEach(crypto => {
+    filteredCryptoList.forEach(crypto => {
       totalInvestment += crypto.investmentAmount || 0;
       totalCurrentValue += (crypto.currentPrice || 0) * (crypto.holdingAmount || 0);
       
@@ -65,7 +70,21 @@ const InvestmentSummary = () => {
 
   return (
     <Card 
-      title="投资总览" 
+      title={
+        <Space>
+          <span>投资总览</span>
+          <Space size="small">
+            <SettingOutlined style={{ color: '#8c8c8c' }} />
+            <Switch
+              size="small"
+              checked={includeCustomTokens}
+              onChange={setIncludeCustomTokens}
+              checkedChildren="含自定义"
+              unCheckedChildren="仅API"
+            />
+          </Space>
+        </Space>
+      }
       className="investment-summary"
       extra={
         <Button 
@@ -117,7 +136,29 @@ const InvestmentSummary = () => {
       <Row justify="center">
         <Col>
           <Text type="secondary">
-            当前日期：{currentDate} | 投资组合数量：{cryptoList.length} 个
+            追梦时间：{summary.earliestTransactionDate 
+              ? summary.earliestTransactionDate.toLocaleDateString('zh-CN')
+              : '暂无记录'
+            } | 当前日期：{currentDate} | 投资组合数量：{includeCustomTokens ? cryptoList.length : cryptoList.filter(crypto => !crypto.isCustom).length} 个
+            {!includeCustomTokens && cryptoList.some(crypto => crypto.isCustom) && (
+               <Tooltip 
+                 title={
+                   <div>
+                     <div style={{ marginBottom: '4px' }}>已排除的自定义代币：</div>
+                     {cryptoList.filter(crypto => crypto.isCustom).map((crypto, index) => (
+                       <div key={crypto.id} style={{ fontSize: '12px' }}>
+                         • {crypto.symbol} ({crypto.name})
+                       </div>
+                     ))}
+                   </div>
+                 }
+                 placement="bottom"
+               >
+                 <span style={{ color: '#faad14', marginLeft: '8px', cursor: 'help' }}>
+                   （已排除 {cryptoList.filter(crypto => crypto.isCustom).length} 个自定义代币）
+                 </span>
+               </Tooltip>
+             )}
           </Text>
         </Col>
       </Row>
@@ -224,7 +265,32 @@ const InvestmentSummary = () => {
           
           <div style={{ textAlign: 'center' }}>
             <Text type="secondary">
-              🎯 投资组合数量：{cryptoList.length} 个 | 💪 坚持定投，长期持有
+              🎯 投资组合数量：{includeCustomTokens ? cryptoList.length : cryptoList.filter(crypto => !crypto.isCustom).length} 个 | 💪 坚持定投，长期持有
+              {!includeCustomTokens && cryptoList.some(crypto => crypto.isCustom) && (
+                <br />
+              )}
+              {!includeCustomTokens && cryptoList.some(crypto => crypto.isCustom) && (
+                 <Tooltip 
+                   title={
+                     <div>
+                       <div style={{ marginBottom: '4px' }}>已排除的自定义代币：</div>
+                       {cryptoList.filter(crypto => crypto.isCustom).map((crypto, index) => (
+                         <div key={crypto.id} style={{ fontSize: '12px' }}>
+                           • {crypto.symbol} ({crypto.name}) - ${crypto.currentPrice || '未设置价格'}
+                         </div>
+                       ))}
+                       <div style={{ marginTop: '8px', fontSize: '11px', color: '#faad14' }}>
+                         💡 提示：可开启开关查看包含自定义代币的完整数据
+                       </div>
+                     </div>
+                   }
+                   placement="top"
+                 >
+                   <span style={{ color: '#faad14', cursor: 'help' }}>
+                     ⚠️ 已排除 {cryptoList.filter(crypto => crypto.isCustom).length} 个自定义代币（价格可能不准确）
+                   </span>
+                 </Tooltip>
+               )}
             </Text>
           </div>
         </div>

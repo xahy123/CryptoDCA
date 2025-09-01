@@ -8,12 +8,13 @@ export const CryptoStatus = {
 };
 
 // 创建一个加密货币数据的默认结构
-export const createCryptoData = (id, name, symbol, address = '', chainId = '') => ({
+export const createCryptoData = (id, name, symbol, address = '', chainId = '', isCustom = false) => ({
   id,                // 唯一标识符
   chainId,           // 链ID
   name,              // 币种名称
   symbol,            // 币种符号
   address,           // 代币合约地址
+  isCustom,          // 是否为自定义代币（手动添加）
   currentPrice: 0,   // 当前价格
   averageCost: 0,    // 平均成本
   holdingAmount: 0,  // 持有数量
