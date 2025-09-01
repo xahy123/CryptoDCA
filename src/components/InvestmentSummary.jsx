@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Button, Statistic, Row, Col, Divider, Typography, Modal, Switch, Space, Tooltip } from 'antd';
 import { BarChartOutlined, SettingOutlined } from '@ant-design/icons';
 import { useCrypto } from '../context/CryptoContext';
+import FearGreedIndex from './FearGreedIndex';
 
 // 数字格式化函数
 const formatNumber = (num, decimals = 2) => {
@@ -69,33 +70,34 @@ const InvestmentSummary = () => {
   };
 
   return (
-    <Card 
-      title={
-        <Space>
-          <span>投资总览</span>
-          <Space size="small">
-            <SettingOutlined style={{ color: '#8c8c8c' }} />
-            <Switch
-              size="small"
-              checked={includeCustomTokens}
-              onChange={setIncludeCustomTokens}
-              checkedChildren="含自定义"
-              unCheckedChildren="仅API"
-            />
+    <>
+      <Card 
+        title={
+          <Space>
+            <span>投资总览</span>
+            <Space size="small">
+              <SettingOutlined style={{ color: '#8c8c8c' }} />
+              <Switch
+                size="small"
+                checked={includeCustomTokens}
+                onChange={setIncludeCustomTokens}
+                checkedChildren="含自定义"
+                unCheckedChildren="仅API"
+              />
+            </Space>
           </Space>
-        </Space>
-      }
-      className="investment-summary"
-      extra={
-        <Button 
-          type="primary" 
-          icon={<BarChartOutlined />}
-          onClick={showSummaryModal}
-        >
-          查看详细总结
-        </Button>
-      }
-    >
+        }
+        className="investment-summary"
+        extra={
+          <Button 
+            type="primary" 
+            icon={<BarChartOutlined />}
+            onClick={showSummaryModal}
+          >
+            查看详细总结
+          </Button>
+        }
+      >
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} md={6}>
           <Statistic
@@ -162,6 +164,9 @@ const InvestmentSummary = () => {
           </Text>
         </Col>
       </Row>
+      </Card>
+      
+      <FearGreedIndex />
 
       <Modal
         title="📊 加密货币定投计划总览"
@@ -295,7 +300,7 @@ const InvestmentSummary = () => {
           </div>
         </div>
       </Modal>
-    </Card>
+    </>
   );
 };
 
