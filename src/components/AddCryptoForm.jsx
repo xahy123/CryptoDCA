@@ -1,35 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Card, Select, Spin, Empty, Radio, Divider } from 'antd';
-import { PlusOutlined, SearchOutlined, EditOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Form, Button, Select, Spin, Empty, Typography } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import { useCrypto } from '../context/CryptoContext';
 
 const { Option } = Select;
+const { Text } = Typography;
+
+const getTokenOptionValue = (token) => token.coingeckoId || token.id;
 
 const AddCryptoForm = ({ onSuccess }) => {
   const [form] = Form.useForm();
-  const { addCrypto, filteredTokens, loading, searchTokens, searchQuery } = useCrypto();
+  const { addCrypto, filteredTokens, loading, searchTokens } = useCrypto();
   const [selectedToken, setSelectedToken] = useState(null);
-  const [inputMode, setInputMode] = useState('api'); // 'api' 或 'manual'
 
-  const onFinish = (values) => {
-    if (inputMode === 'api' && selectedToken) {
-      addCrypto(selectedToken.name, selectedToken.symbol, selectedToken.address, selectedToken.chainId, false);
-    } else {
-      // 手动输入模式或API模式下的手动填写
-      addCrypto(values.name, values.symbol, values.address || '', values.chainId || '', true);
+  const onFinish = async () => {
+    if (!selectedToken) {
+      return;
     }
+
+    await addCrypto(selectedToken.name, selectedToken.symbol, {
+      coingeckoId: selectedToken.coingeckoId,
+      image: selectedToken.image,
+      marketCapRank: selectedToken.marketCapRank,
+      currentPrice: selectedToken.currentPrice,
+    });
+
     form.resetFields();
     setSelectedToken(null);
     if (onSuccess) {
       onSuccess();
     }
-  };
-  
-  const handleModeChange = (e) => {
-    const mode = e.target.value;
-    setInputMode(mode);
-    form.resetFields();
-    setSelectedToken(null);
   };
   
   const handleSearch = (value) => {
@@ -38,13 +38,11 @@ const AddCryptoForm = ({ onSuccess }) => {
   
   const handleTokenSelect = (tokenId) => {
     console.log('选择的代币ID:', tokenId, filteredTokens);
-    const token = filteredTokens.find(t => t.id === tokenId);
+    const token = filteredTokens.find(t => getTokenOptionValue(t) === tokenId);
     if (token) {
       setSelectedToken(token);
       form.setFieldsValue({
-        name: token.name,
-        symbol: token.symbol,
-        address: token.address
+        tokenId: getTokenOptionValue(token)
       });
     }
   };
@@ -58,90 +56,59 @@ const AddCryptoForm = ({ onSuccess }) => {
         onFinish={onFinish}
         autoComplete="off"
       >
-        <Form.Item label="添加方式">
-          <Radio.Group value={inputMode} onChange={handleModeChange}>
-            <Radio.Button value="api">
-              <SearchOutlined /> API搜索
-            </Radio.Button>
-            <Radio.Button value="manual">
-              <EditOutlined /> 手动输入
-            </Radio.Button>
-          </Radio.Group>
-        </Form.Item>
-        
-        <Divider style={{ margin: '16px 0' }} />
-        
-        {inputMode === 'api' && (
-          <Form.Item
-            label="从API选择币种"
-            name="tokenId"
-          >
-            <Select
-              showSearch
-              placeholder="搜索币种..."
-              loading={loading}
-              onSearch={handleSearch}
-              onChange={handleTokenSelect}
-              notFoundContent={loading ? <Spin size="small" /> : <Empty description="无匹配币种" />}
-              filterOption={false}
-              style={{ width: '100%' }}
-              value={selectedToken?.id}
-            >
-              {filteredTokens.map((token, index) => (
-                <Option key={index} value={token.id}>
-                  {token.name} ({token.symbol})
-                  {token.chainDisplayName && ` - ${token.chainDisplayName}`}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        )}
-        
         <Form.Item
-          label="币种名称"
-          name="name"
+          label="从CoinGecko选择币种"
+          name="tokenId"
           rules={[{ required: true, message: '请输入币种名称!' }]}
         >
-          <Input 
-            placeholder="例如: Bitcoin" 
-            disabled={inputMode === 'api' && !selectedToken}
-          />
-        </Form.Item>
-
-        <Form.Item
-          label="币种符号"
-          name="symbol"
-          rules={[{ required: true, message: '请输入币种符号!' }]}
-        >
-          <Input 
-            placeholder="例如: BTC" 
-            disabled={inputMode === 'api' && !selectedToken}
-          />
-        </Form.Item>
-        
-        <Form.Item
-          label="代币合约地址"
-          name="address"
-        >
-          <Input 
-            placeholder="例如: 0x1234...abcd (可选)" 
-            disabled={inputMode === 'api' && !selectedToken}
-          />
-        </Form.Item>
-        
-        {inputMode === 'manual' && (
-          <Form.Item
-            label="链ID"
-            name="chainId"
+          <Select
+            showSearch
+            placeholder="搜索 Bitcoin、ETH、Solana..."
+            loading={loading}
+            onSearch={handleSearch}
+            onChange={handleTokenSelect}
+            notFoundContent={loading ? <Spin size="small" /> : <Empty description="无匹配币种" />}
+            filterOption={false}
+            style={{ width: '100%' }}
+            value={selectedToken ? getTokenOptionValue(selectedToken) : undefined}
+            optionLabelProp="label"
           >
-            <Input 
-              placeholder="例如: 1 (以太坊主网，可选)" 
-            />
-          </Form.Item>
+            {filteredTokens.map((token) => (
+              <Option
+                key={getTokenOptionValue(token)}
+                value={getTokenOptionValue(token)}
+                label={`${token.name} (${token.symbol})`}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {token.image && (
+                    <img src={token.image} alt="" style={{ width: 20, height: 20, borderRadius: '50%' }} />
+                  )}
+                  <span>{token.name} ({token.symbol})</span>
+                  {token.marketCapRank && (
+                    <Text type="secondary" style={{ marginLeft: 'auto' }}>
+                      #{token.marketCapRank}
+                    </Text>
+                  )}
+                </div>
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+        
+        {selectedToken && (
+          <div className="selected-asset">
+            {selectedToken.image && (
+              <img src={selectedToken.image} alt="" className="asset-icon" />
+            )}
+            <div>
+              <strong>{selectedToken.name} ({selectedToken.symbol})</strong>
+              <Text type="secondary">CoinGecko ID: {selectedToken.coingeckoId}</Text>
+            </div>
+          </div>
         )}
 
         <Form.Item>
-          <Button type="primary" htmlType="submit" icon={<PlusOutlined />} block>
+          <Button type="primary" htmlType="submit" icon={<PlusOutlined />} block disabled={!selectedToken}>
             添加
           </Button>
         </Form.Item>

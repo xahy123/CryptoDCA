@@ -1,41 +1,40 @@
 import React from 'react'
-import { Layout, Typography, Row, Col, Space } from 'antd'
-import { TwitterOutlined } from '@ant-design/icons'
+import { Layout, Typography, Space, Tag } from 'antd'
+import { DatabaseOutlined, TwitterOutlined } from '@ant-design/icons'
 import './App.css'
 import { CryptoProvider } from './context/CryptoContext'
 import CryptoList from './components/CryptoList'
 import InvestmentSummary from './components/InvestmentSummary'
-import ApiTokenList from './components/ApiTokenList'
 import logoSvg from './assets/logo.svg'
 
 const { Header, Content, Footer } = Layout
-const { Title } = Typography
+const { Text } = Typography
 
 function App() {
   return (
     <CryptoProvider>
       <Layout className="layout">
         <Header className="header">
-          <Space align="center">
-             <img src={logoSvg} alt="CryptoDCA Logo" style={{ height: '40px' }} />
-             <Title level={3} style={{ color: 'white', margin: 0 }}>
-               加密货币定投计划CryptoDCA
-             </Title>
-           </Space>
+          <div className="header-inner">
+            <Space align="center" size={12}>
+              <img src={logoSvg} alt="CryptoDCA Logo" className="brand-logo" />
+              <div>
+                <div className="brand-title">CryptoDCA</div>
+                <Text className="brand-subtitle">加密货币定投账本</Text>
+              </div>
+            </Space>
+            <Tag className="source-tag" icon={<DatabaseOutlined />}>
+              CoinGecko
+            </Tag>
+          </div>
         </Header>
-        <Content style={{ padding: '0 50px' }}>
-          <div className="site-layout-content" style={{ padding: 24, minHeight: 'calc(100vh - 134px)' }}>
-            <Row gutter={[16, 16]}>
-              <Col span={24}>
-                <InvestmentSummary />
-              </Col>
-              <Col span={24}>
-                <CryptoList />
-              </Col>
-            </Row>
+        <Content className="app-content">
+          <div className="site-layout-content">
+            <InvestmentSummary />
+            <CryptoList />
           </div>
         </Content>
-        <Footer style={{ textAlign: 'center', background: '#f0f2f5', padding: '24px 0' }}>
+        <Footer className="app-footer">
           <Space direction="vertical" size="small">
             <div>
               CryptoDCA ©2025 - 加密货币定投统计工具

@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { Table, Input, Card, Button, Spin, Empty, message, Alert } from 'antd';
 import { SearchOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useCrypto } from '../context/CryptoContext';
-import { fetchCryptoCurrencies } from '../services/RelayApiService';
 
 const ApiTokenList = () => {
-  const { filteredTokens, searchTokens, loading, error, addCrypto, dispatch } = useCrypto();
+  const { filteredTokens, searchTokens, loading, error, addCrypto, refreshApiTokens } = useCrypto();
   const [searchValue, setSearchValue] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   
@@ -18,22 +17,23 @@ const ApiTokenList = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      const tokens = await fetchCryptoCurrencies();
-      dispatch({ type: 'SET_API_TOKENS', payload: tokens });
+      await refreshApiTokens();
       message.success('代币列表已刷新');
-    } catch (err) {
+    } catch (error) {
+      console.error('刷新代币列表失败:', error);
       message.error('刷新代币列表失败');
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: '无法从API加载代币列表' 
-      });
     } finally {
       setRefreshing(false);
     }
   };
   
-  const handleAddCrypto = (token) => {
-    addCrypto(token.name, token.symbol);
+  const handleAddCrypto = async (token) => {
+    await addCrypto(token.name, token.symbol, {
+      coingeckoId: token.coingeckoId,
+      image: token.image,
+      marketCapRank: token.marketCapRank,
+      currentPrice: token.currentPrice,
+    });
     message.success(`已添加 ${token.name} (${token.symbol}) 到您的投资组合`);
   };
   
@@ -49,10 +49,10 @@ const ApiTokenList = () => {
       ),
     },
     {
-      title: '链',
-      dataIndex: 'chainDisplayName',
-      key: 'chainDisplayName',
-      render: (text) => text || '-',
+      title: '市值排名',
+      dataIndex: 'marketCapRank',
+      key: 'marketCapRank',
+      render: (rank) => rank ? `#${rank}` : '-',
     },
     {
       title: '操作',

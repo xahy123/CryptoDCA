@@ -5,18 +5,71 @@
 
 .layout {
   min-height: 100vh;
+  background: transparent;
 }
 
 .header {
+  height: 72px;
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #1890ff 0%, #52c41a 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 0 24px;
+  line-height: normal;
+  background: rgba(251, 252, 248, 0.92);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(16px);
 }
 
-.header .ant-space {
+.header-inner {
+  width: min(1280px, 100%);
+  margin: 0 auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brand-logo {
+  height: 38px;
+  width: 38px;
+}
+
+.brand-title {
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.brand-subtitle {
+  color: var(--muted) !important;
+  font-size: 12px;
+}
+
+.source-tag {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  border-color: rgba(12, 107, 88, 0.18);
+  color: var(--accent);
+  background: rgba(12, 107, 88, 0.07);
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.app-content {
+  padding: 24px;
+}
+
+.app-footer {
+  text-align: center;
+  background: transparent;
+  color: var(--muted);
+  padding: 12px 0 28px;
 }
 
 .ant-layout-footer a {
@@ -25,69 +78,446 @@
 }
 
 .ant-layout-footer a:hover {
-  color: #40a9ff !important;
+  color: var(--accent) !important;
   transform: translateY(-1px);
 }
 
 .site-layout-content {
-  background: #fff;
+  width: min(1280px, 100%);
+  min-height: calc(100vh - 132px);
+  margin: 0 auto;
+}
+
+.panel,
+.investment-summary {
+  background: rgba(251, 252, 248, 0.94);
+  border: 1px solid var(--line);
   border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.investment-summary {
+  margin-bottom: 14px;
+}
+
+.ant-card-head {
+  border-bottom-color: var(--line) !important;
+}
+
+.section-title {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.section-kicker,
+.table-subtitle {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.section-kicker {
+  display: block;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.quiet-action {
+  color: var(--accent) !important;
+  font-weight: 700;
+}
+
+.metric-grid .ant-col {
+  min-width: 0;
+}
+
+.metric-grid .ant-statistic {
+  padding: 8px 10px;
+  border-left: 2px solid rgba(12, 107, 88, 0.18);
+}
+
+.metric-grid .ant-statistic-title {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.metric-grid .ant-statistic-content {
+  color: var(--ink);
+  font-family: "DIN Alternate", "Avenir Next", "PingFang SC", sans-serif;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.summary-divider {
+  margin: 14px 0;
+}
+
+.summary-meta {
+  color: var(--muted);
 }
 
 /* 表格样式 */
 .crypto-list {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
+  overflow: hidden;
 }
 
-.crypto-list .ant-table-thead > tr > th {
-  background-color: #f0f2f5;
-  font-weight: 600;
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.toolbar-actions {
+  justify-content: flex-end;
+}
+
+.ant-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: none;
+  font-weight: 700;
+}
+
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+  background: var(--accent-strong) !important;
+  border-color: var(--accent-strong) !important;
+}
+
+.portfolio-table .ant-table {
+  background: transparent;
+}
+
+.portfolio-table .ant-table-thead > tr > th {
+  background: #eef3ed !important;
+  color: #334139;
+  border-bottom: 1px solid var(--line) !important;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.portfolio-table .ant-table-thead > tr > th.ant-table-column-has-sorters {
+  padding-right: 24px;
+}
+
+.portfolio-table .ant-table-column-sorters {
+  justify-content: inherit;
+}
+
+.portfolio-table .ant-table-column-sorter {
+  margin-left: 8px;
+  position: absolute;
+  right: 8px;
+}
+
+.portfolio-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid rgba(220, 227, 221, 0.72);
+  color: var(--ink);
+  vertical-align: middle;
+}
+
+.portfolio-table .ant-table-tbody > tr:hover > td {
+  background: rgba(12, 107, 88, 0.035) !important;
+}
+
+.asset-cell,
+.asset-option,
+.selected-asset {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.asset-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  object-fit: cover;
+}
+
+.asset-icon.small {
+  width: 20px;
+  height: 20px;
+}
+
+.asset-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.asset-name {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 1px;
+}
+
+.number-cell {
+  display: inline-block;
+  width: 100%;
+  text-align: right;
+  font-family: "DIN Alternate", "Avenir Next", "PingFang SC", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.status-tag {
+  min-width: 42px;
+  text-align: center;
+  border-radius: 6px;
+  font-weight: 700;
 }
 
 /* 表单样式 */
 .add-crypto-form,
-.add-transaction-form,
-.update-price-form {
+.add-transaction-form {
   height: 100%;
+}
+
+.selected-asset,
+.transaction-hint {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.selected-asset .ant-typography {
+  display: block;
+  font-size: 12px;
+}
+
+.fear-greed-float {
+  position: fixed;
+  top: 13px;
+  right: calc((100vw - min(1280px, 100vw)) / 2 + 142px);
+  z-index: 30;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border: 1px solid rgba(220, 227, 221, 0.85);
+  border-radius: 50%;
+  background: rgba(251, 252, 248, 0.82);
+  box-shadow: 0 18px 44px rgba(38, 52, 44, 0.18);
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.fear-greed-float:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 54px rgba(38, 52, 44, 0.24);
+}
+
+.fear-greed-float.loading,
+.fear-greed-float.error {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.fear-greed-ring {
+  width: 48px;
+  height: 48px;
+  margin: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.fear-greed-core {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border-radius: 50%;
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px rgba(220, 227, 221, 0.7);
+}
+
+.fear-greed-core strong {
+  font-family: "DIN Alternate", "Avenir Next", "PingFang SC", sans-serif;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.fear-greed-core span {
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.fear-greed-modal {
+  padding-top: 4px;
+}
+
+.fear-greed-summary {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 18px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.fear-greed-modal-label {
+  margin-bottom: 8px;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.history-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 22px 0 12px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.history-loading {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--muted);
+}
+
+.fear-greed-history {
+  height: 230px;
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  overflow-x: auto;
+  padding: 10px 4px 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.history-bar-wrap {
+  min-width: 18px;
+  height: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.history-bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  opacity: 0.92;
+}
+
+.history-bar-wrap span {
+  color: var(--muted);
+  font-size: 10px;
+  transform: rotate(-45deg);
+  transform-origin: center;
+  white-space: nowrap;
 }
 
 /* 响应式调整 */
 @media (max-width: 768px) {
   .header {
-    padding: 0 16px;
+    height: auto;
+    padding: 14px 16px;
   }
-  
+
+  .header-inner,
+  .table-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .source-tag {
+    margin-left: 50px;
+  }
+
+  .app-content {
+    padding: 12px;
+  }
+
   .site-layout-content {
-    padding: 16px !important;
+    min-height: calc(100vh - 150px);
+  }
+
+  .toolbar-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .toolbar-actions .ant-btn {
+    flex: 1 1 auto;
+  }
+
+  .fear-greed-float {
+    right: 14px;
+    top: 14px;
+    width: 54px;
+    height: 54px;
+  }
+
+  .fear-greed-ring {
+    width: 46px;
+    height: 46px;
+    margin: 4px;
+  }
+
+  .fear-greed-core {
+    width: 36px;
+    height: 36px;
+  }
+
+  .fear-greed-core strong {
+    font-size: 14px;
+  }
+
+  .fear-greed-summary {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 
 /* 状态标签颜色 */
 .ant-tag-green {
-  color: #52c41a;
-  background: #f6ffed;
-  border-color: #b7eb8f;
+  color: var(--gain);
+  background: rgba(23, 114, 69, 0.08);
+  border-color: rgba(23, 114, 69, 0.26);
 }
 
 .ant-tag-red {
-  color: #f5222d;
-  background: #fff1f0;
-  border-color: #ffa39e;
+  color: var(--loss);
+  background: rgba(189, 45, 42, 0.08);
+  border-color: rgba(189, 45, 42, 0.24);
 }
 
 .ant-tag-blue {
-  color: #1890ff;
-  background: #e6f7ff;
-  border-color: #91d5ff;
-}
-
-/* 表格居中样式 */
-.ant-table-cell {
-  text-align: center !important;
-}
-
-.ant-table-thead > tr > th {
-  text-align: center !important;
+  color: #59655d;
+  background: rgba(104, 116, 110, 0.08);
+  border-color: rgba(104, 116, 110, 0.22);
 }
 
 /* API代币列表样式 */

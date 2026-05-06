@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Spin, Alert, Progress, Typography, Tooltip, Button, Modal } from 'antd';
-import { InfoCircleOutlined, LineChartOutlined } from '@ant-design/icons';
+import { Button, Modal, Progress, Spin, Tooltip, Typography } from 'antd';
+import { LineChartOutlined, ReloadOutlined } from '@ant-design/icons';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const FearGreedIndex = () => {
   const [indexData, setIndexData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [historicalData, setHistoricalData] = useState([]);
-  const [chartModalVisible, setChartModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const [chartLoading, setChartLoading] = useState(false);
 
   useEffect(() => {
@@ -22,14 +22,14 @@ const FearGreedIndex = () => {
       setError(null);
       const response = await fetch('https://api.alternative.me/fng/');
       const data = await response.json();
-      
+
       if (data && data.data && data.data.length > 0) {
         setIndexData(data.data[0]);
       } else {
         throw new Error('数据格式错误');
       }
     } catch (err) {
-      setError(err.message || '获取恐慌指数失败');
+      setError(err.message || '获取市场情绪失败');
     } finally {
       setLoading(false);
     }
@@ -40,9 +40,9 @@ const FearGreedIndex = () => {
       setChartLoading(true);
       const response = await fetch('https://api.alternative.me/fng/?limit=30');
       const data = await response.json();
-      
+
       if (data && data.data) {
-        setHistoricalData(data.data.reverse()); // 反转数组，让最新的数据在右边
+        setHistoricalData(data.data.reverse());
       }
     } catch (err) {
       console.error('获取历史数据失败:', err);
@@ -51,27 +51,27 @@ const FearGreedIndex = () => {
     }
   };
 
-  const showChart = () => {
-    setChartModalVisible(true);
+  const showModal = () => {
+    setModalVisible(true);
     if (historicalData.length === 0) {
       fetchHistoricalData();
     }
   };
 
   const getIndexColor = (value) => {
-    if (value <= 25) return '#f5222d'; // 极度恐慌 - 红色
-    if (value <= 45) return '#fa8c16'; // 恐慌 - 橙色
-    if (value <= 55) return '#fadb14'; // 中性 - 黄色
-    if (value <= 75) return '#a0d911'; // 贪婪 - 浅绿色
-    return '#52c41a'; // 极度贪婪 - 绿色
+    if (value <= 25) return '#bd2d2a';
+    if (value <= 45) return '#d97a22';
+    if (value <= 55) return '#d8b20f';
+    if (value <= 75) return '#6f9f2f';
+    return '#177245';
   };
 
   const getIndexLabel = (value) => {
-    if (value <= 25) return '极度恐慌';
+    if (value <= 25) return '极恐';
     if (value <= 45) return '恐慌';
     if (value <= 55) return '中性';
     if (value <= 75) return '贪婪';
-    return '极度贪婪';
+    return '极贪';
   };
 
   const formatTimestamp = (timestamp) => {
@@ -87,44 +87,20 @@ const FearGreedIndex = () => {
 
   if (loading) {
     return (
-      <Card title="恐慌指数" style={{ marginBottom: 16 }}>
-        <div style={{ textAlign: 'center', padding: '20px 0' }}>
-          <Spin size="large" />
-          <div style={{ marginTop: 8 }}>加载中...</div>
-        </div>
-      </Card>
+      <div className="fear-greed-float loading" aria-label="市场情绪加载中">
+        <Spin size="small" />
+      </div>
     );
   }
 
-  if (error) {
+  if (error || !indexData) {
     return (
-      <Card title="恐慌指数" style={{ marginBottom: 16 }}>
-        <Alert
-          message="加载失败"
-          description={error}
-          type="error"
-          showIcon
-          action={
-            <button 
-              onClick={fetchFearGreedIndex}
-              style={{
-                background: 'none',
-                border: '1px solid #d9d9d9',
-                borderRadius: '6px',
-                padding: '4px 8px',
-                cursor: 'pointer'
-              }}
-            >
-              重试
-            </button>
-          }
-        />
-      </Card>
+      <Tooltip title="市场情绪加载失败，点击重试">
+        <button className="fear-greed-float error" onClick={fetchFearGreedIndex} aria-label="重试市场情绪加载">
+          <ReloadOutlined />
+        </button>
+      </Tooltip>
     );
-  }
-
-  if (!indexData) {
-    return null;
   }
 
   const indexValue = parseInt(indexData.value);
@@ -133,182 +109,111 @@ const FearGreedIndex = () => {
 
   return (
     <>
-      <Card 
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>恐慌指数</span>
-            <Tooltip title="恐慌指数反映市场情绪，0表示极度恐慌，100表示极度贪婪">
-              <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
-            </Tooltip>
-          </div>
-        }
-        extra={
-          <Button 
-            type="text" 
-            icon={<LineChartOutlined />}
-            onClick={showChart}
-            size="small"
+      <Tooltip title={`市场情绪：${indexValue}/100 ${indexLabel}`}>
+        <button
+          className="fear-greed-float"
+          onClick={showModal}
+          aria-label={`市场情绪 ${indexValue}/100 ${indexLabel}`}
+        >
+          <span
+            className="fear-greed-ring"
+            style={{
+              background: `conic-gradient(${indexColor} ${indexValue * 3.6}deg, rgba(104, 116, 110, 0.14) 0deg)`
+            }}
           >
-            历史趋势
+            <span className="fear-greed-core">
+              <strong style={{ color: indexColor }}>{indexValue}</strong>
+              <span>{indexLabel}</span>
+            </span>
+          </span>
+        </button>
+      </Tooltip>
+
+      <Modal
+        title="市场情绪指数"
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        footer={[
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={fetchFearGreedIndex}>
+            刷新
+          </Button>,
+          <Button key="close" type="primary" onClick={() => setModalVisible(false)}>
+            关闭
           </Button>
-        }
-        style={{ marginBottom: 16 }}
+        ]}
+        width={760}
       >
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ marginBottom: 16 }}>
+        <div className="fear-greed-modal">
+          <div className="fear-greed-summary">
             <Progress
               type="circle"
               percent={indexValue}
               format={() => (
                 <div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: indexColor }}>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: indexColor }}>
                     {indexValue}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                    /100
-                  </div>
+                  <div style={{ fontSize: '12px', color: '#68746e' }}>/100</div>
                 </div>
               )}
               strokeColor={indexColor}
-              size={120}
+              size={132}
             />
-          </div>
-          
-          <div style={{ marginBottom: 8 }}>
-            <Text strong style={{ color: indexColor, fontSize: '16px' }}>
-              {indexLabel}
-            </Text>
-          </div>
-          
-          <div style={{ color: '#8c8c8c', fontSize: '12px' }}>
-            更新时间: {formatTimestamp(indexData.timestamp)}
-          </div>
-          
-          <div style={{ marginTop: 12, padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-            <Text style={{ fontSize: '12px', color: '#666' }}>
-              数据来源: Alternative.me
-            </Text>
-          </div>
-        </div>
-      </Card>
-      
-      <Modal
-        title="恐慌指数历史趋势（近30天）"
-        open={chartModalVisible}
-        onCancel={() => setChartModalVisible(false)}
-        footer={[
-          <Button key="close" onClick={() => setChartModalVisible(false)}>
-            关闭
-          </Button>
-        ]}
-        width={800}
-      >
-        {chartLoading ? (
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <Spin size="large" />
-            <div style={{ marginTop: 8 }}>加载历史数据中...</div>
-          </div>
-        ) : (
-          <div>
-            <div style={{ marginBottom: 16, textAlign: 'center' }}>
+            <div>
+              <div className="fear-greed-modal-label" style={{ color: indexColor }}>
+                {getIndexLabel(indexValue)}
+              </div>
               <Text type="secondary">
-                恐慌指数历史走势图 - 数据来源: Alternative.me
+                更新时间：{formatTimestamp(indexData.timestamp)}
+              </Text>
+              <br />
+              <Text type="secondary">
+                数据来源：Alternative.me
               </Text>
             </div>
-            
-            {historicalData.length > 0 ? (
-              <div style={{ height: '400px', overflowX: 'auto' }}>
-                <div style={{ display: 'flex', height: '350px' }}>
-                  {/* Y轴刻度 */}
-                  <div style={{ 
-                    width: '40px', 
-                    height: '350px', 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-end',
-                    paddingRight: '8px',
-                    borderRight: '1px solid #e8e8e8',
-                    marginRight: '8px'
-                  }}>
-                    {[100, 75, 50, 25, 0].map(value => (
-                      <div key={value} style={{ 
-                        fontSize: '10px', 
-                        color: '#666',
-                        lineHeight: '1',
-                        transform: 'translateY(50%)'
-                      }}>
-                        {value}
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* 图表区域 */}
-                  <div style={{ display: 'flex', alignItems: 'end', height: '350px', gap: '4px', minWidth: '600px', flex: 1 }}>
-                    {historicalData.map((item, index) => {
-                      const value = parseInt(item.value);
-                      const color = getIndexColor(value);
-                      const height = (value / 100) * 300; // 最大高度300px
-                      const date = new Date(parseInt(item.timestamp) * 1000);
-                      const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
-                      
-                      return (
-                        <Tooltip 
-                          key={index}
-                          title={
-                            <div>
-                              <div>日期: {date.toLocaleDateString('zh-CN')}</div>
-                              <div>指数: {value}</div>
-                              <div>状态: {getIndexLabel(value)}</div>
-                            </div>
-                          }
-                        >
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-                            <div
-                              style={{
-                                width: '100%',
-                                minWidth: '16px',
-                                height: `${height}px`,
-                                backgroundColor: color,
-                                borderRadius: '2px 2px 0 0',
-                                cursor: 'pointer',
-                                transition: 'opacity 0.2s'
-                              }}
-                              onMouseEnter={(e) => e.target.style.opacity = '0.8'}
-                              onMouseLeave={(e) => e.target.style.opacity = '1'}
-                            />
-                            <div style={{ 
-                              fontSize: '10px', 
-                              color: '#666', 
-                              marginTop: '4px',
-                              transform: 'rotate(-45deg)',
-                              transformOrigin: 'center',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {dateStr}
-                            </div>
-                          </div>
-                        </Tooltip>
-                      );
-                    })}
-                  </div>
-                </div>
-                
-                <div style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#666' }}>
-                  <span>极度恐慌 (0-25)</span>
-                  <span>恐慌 (25-45)</span>
-                  <span>中性 (45-55)</span>
-                  <span>贪婪 (55-75)</span>
-                  <span>极度贪婪 (75-100)</span>
-                </div>
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                <Text type="secondary">暂无历史数据</Text>
-              </div>
-            )}
           </div>
-        )}
+
+          <div className="history-heading">
+            <LineChartOutlined />
+            近30天趋势
+          </div>
+
+          {chartLoading ? (
+            <div className="history-loading">
+              <Spin />
+              <span>加载历史数据中...</span>
+            </div>
+          ) : historicalData.length > 0 ? (
+            <div className="fear-greed-history">
+              {historicalData.map((item) => {
+                const value = parseInt(item.value);
+                const color = getIndexColor(value);
+                const date = new Date(parseInt(item.timestamp) * 1000);
+                const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
+
+                return (
+                  <Tooltip
+                    key={item.timestamp}
+                    title={`${date.toLocaleDateString('zh-CN')} · ${value} · ${getIndexLabel(value)}`}
+                  >
+                    <div className="history-bar-wrap">
+                      <div
+                        className="history-bar"
+                        style={{
+                          height: `${Math.max(8, value * 1.8)}px`,
+                          backgroundColor: color
+                        }}
+                      />
+                      <span>{dateStr}</span>
+                    </div>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="history-loading">暂无历史数据</div>
+          )}
+        </div>
       </Modal>
     </>
   );

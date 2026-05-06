@@ -1,18 +1,15 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Table, Tag, Button, Space, Modal, message, Tooltip } from 'antd';
-import { DeleteOutlined, ReloadOutlined, PlusOutlined, DollarOutlined, DownloadOutlined, UploadOutlined, EditOutlined, UserOutlined } from '@ant-design/icons';
+import React, { useState, useRef } from 'react';
+import { Button, Empty, message, Modal, Popconfirm, Space, Table, Tag, Tooltip } from 'antd';
+import { DeleteOutlined, DownloadOutlined, DollarOutlined, PlusOutlined, ReloadOutlined, UploadOutlined } from '@ant-design/icons';
 import { useCrypto } from '../context/CryptoContext';
 import { CryptoStatus } from '../models/CryptoData';
 import AddCryptoForm from './AddCryptoForm';
 import AddTransactionForm from './AddTransactionForm';
-import EditPriceModal from './EditPriceModal';
 
 const CryptoList = () => {
   const { cryptoList, deleteCrypto, updateAllPricesFromApi, loading, exportData, importData } = useCrypto();
   const [isAddCryptoModalVisible, setIsAddCryptoModalVisible] = useState(false);
   const [isAddTransactionModalVisible, setIsAddTransactionModalVisible] = useState(false);
-  const [isEditPriceModalVisible, setIsEditPriceModalVisible] = useState(false);
-  const [selectedCryptoForEdit, setSelectedCryptoForEdit] = useState(null);
   const fileInputRef = useRef(null);
   
   // 数字格式化函数
@@ -63,80 +60,84 @@ const CryptoList = () => {
     event.target.value = '';
   };
   
-  // 处理编辑价格
-  const handleEditPrice = (crypto) => {
-    setSelectedCryptoForEdit(crypto);
-    setIsEditPriceModalVisible(true);
-  };
-  
-  // 关闭编辑价格模态框
-  const handleCloseEditPriceModal = () => {
-    setIsEditPriceModalVisible(false);
-    setSelectedCryptoForEdit(null);
-  };
-  
   // 定义表格列
   const columns = [
     {
       title: '币种',
       dataIndex: 'symbol',
       key: 'symbol',
+      width: 150,
+      align: 'left',
       render: (text, record) => (
-        <span>
-          <Space size="small">
+        <div className="asset-cell">
+          {record.image ? (
+            <img src={record.image} alt="" className="asset-icon" />
+          ) : (
+            <span className="asset-icon asset-fallback">{text?.slice(0, 1)}</span>
+          )}
+          <div>
             <strong>{text}</strong>
-            {record.isCustom && (
-              <Tooltip title="自定义代币">
-                <UserOutlined style={{ color: '#faad14', fontSize: '12px' }} />
-              </Tooltip>
-            )}
-          </Space>
-          <div style={{ fontSize: '12px', color: '#888' }}>{record.name}</div>
-        </span>
+            <div className="asset-name">{record.name}</div>
+          </div>
+        </div>
       ),
+      fixed: 'left',
     },
     {
       title: '当前价格',
       dataIndex: 'currentPrice',
       key: 'currentPrice',
-      render: (price) => formatPrice(price),
+      width: 130,
+      align: 'right',
+      render: (price) => <span className="number-cell">{formatPrice(price)}</span>,
       sorter: (a, b) => a.currentPrice - b.currentPrice,
     },
     {
       title: '平均成本',
       dataIndex: 'averageCost',
       key: 'averageCost',
-      render: (cost) => formatPrice(cost),
+      width: 130,
+      align: 'right',
+      render: (cost) => <span className="number-cell">{formatPrice(cost)}</span>,
       sorter: (a, b) => a.averageCost - b.averageCost,
     },
     {
       title: '持有数量',
       dataIndex: 'holdingAmount',
       key: 'holdingAmount',
-      render: (amount) => formatNumber(amount, 4),
+      width: 130,
+      align: 'right',
+      render: (amount) => <span className="number-cell">{formatNumber(amount, 4)}</span>,
       sorter: (a, b) => a.holdingAmount - b.holdingAmount,
     },
     {
       title: '投入金额',
       dataIndex: 'investmentAmount',
       key: 'investmentAmount',
-      render: (amount) => `$${formatNumber(amount, 2)}`,
+      width: 130,
+      align: 'right',
+      render: (amount) => <span className="number-cell">${formatNumber(amount, 2)}</span>,
       sorter: (a, b) => a.investmentAmount - b.investmentAmount,
     },
     {
       title: '当前价值',
       dataIndex: 'currentValue',
       key: 'currentValue',
-      render: (value) => `$${formatNumber(value, 2)}`,
+      width: 130,
+      align: 'right',
+      render: (value) => <span className="number-cell">${formatNumber(value, 2)}</span>,
       sorter: (a, b) => a.currentValue - b.currentValue,
     },
     {
       title: '利润/亏损',
       dataIndex: 'profit',
       key: 'profit',
+      width: 130,
+      align: 'right',
       render: (profit) => {
         const color = profit > 0 ? 'green' : profit < 0 ? 'red' : '';
-        return <span style={{ color }}>${formatNumber(profit, 2)}</span>;
+        const prefix = profit > 0 ? '+' : profit < 0 ? '-' : '';
+        return <span className="number-cell" style={{ color }}>{prefix}${formatNumber(Math.abs(profit), 2)}</span>;
       },
       sorter: (a, b) => a.profit - b.profit,
     },
@@ -144,9 +145,12 @@ const CryptoList = () => {
       title: '收益率',
       dataIndex: 'profitRate',
       key: 'profitRate',
+      width: 110,
+      align: 'right',
       render: (rate) => {
         const color = rate > 0 ? 'green' : rate < 0 ? 'red' : '';
-        return <span style={{ color }}>{formatNumber(rate, 2)}%</span>;
+        const prefix = rate > 0 ? '+' : rate < 0 ? '-' : '';
+        return <span className="number-cell" style={{ color }}>{prefix}{formatNumber(Math.abs(rate), 2)}%</span>;
       },
       sorter: (a, b) => a.profitRate - b.profitRate,
     },
@@ -154,6 +158,8 @@ const CryptoList = () => {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
+      width: 90,
+      align: 'center',
       render: (status) => {
         let color = 'blue';
         let text = '持平';
@@ -166,7 +172,7 @@ const CryptoList = () => {
           text = '亏损';
         }
         
-        return <Tag color={color}>{text}</Tag>;
+        return <Tag color={color} className="status-tag">{text}</Tag>;
       },
       filters: [
         { text: '盈利', value: CryptoStatus.PROFIT },
@@ -178,32 +184,35 @@ const CryptoList = () => {
     {
       title: '操作',
       key: 'action',
+      width: 72,
+      align: 'center',
       render: (_, record) => (
         <Space size="middle">
-          {record.isCustom && (
-            <Button 
-              type="text" 
-              icon={<EditOutlined />}
-              onClick={() => handleEditPrice(record)}
-              title="编辑价格"
-            />
-          )}
-          <Button 
-            type="text" 
-            danger 
-            icon={<DeleteOutlined />}
-            onClick={() => deleteCrypto(record.id)}
-            title="删除"
-          />
+          <Popconfirm
+            title="删除币种"
+            description={`确认删除 ${record.symbol} 的记录？`}
+            okText="删除"
+            cancelText="取消"
+            okButtonProps={{ danger: true }}
+            onConfirm={() => deleteCrypto(record.id)}
+          >
+            <Tooltip title="删除">
+              <Button type="text" danger icon={<DeleteOutlined />} />
+            </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },
   ];
 
   return (
-    <div className="crypto-list">
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Space>
+    <div className="crypto-list panel">
+      <div className="table-toolbar">
+        <div>
+          <div className="section-title">持仓明细</div>
+          <div className="table-subtitle">按币种汇总你的定投成本和当前盈亏</div>
+        </div>
+        <Space wrap className="toolbar-actions">
           <Button 
             type="primary" 
             icon={<PlusOutlined />}
@@ -232,8 +241,7 @@ const CryptoList = () => {
           >
             导入数据
           </Button>
-        </Space>
-        <Button 
+          <Button 
           type="primary" 
           icon={<ReloadOutlined />}
           onClick={updateAllPricesFromApi}
@@ -241,14 +249,28 @@ const CryptoList = () => {
         >
           更新全部价格
         </Button>
+        </Space>
       </div>
       <Table 
+        className="portfolio-table"
         columns={columns} 
         dataSource={cryptoList} 
         rowKey="id" 
         pagination={false}
-        scroll={{ x: 'max-content' }}
+        size="middle"
+        tableLayout="fixed"
+        scroll={{ x: 1200 }}
         locale={{
+          emptyText: (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="还没有持仓记录"
+            >
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddCryptoModalVisible(true)}>
+                添加第一个币种
+              </Button>
+            </Empty>
+          ),
           triggerDesc: '点击降序',
           triggerAsc: '点击升序',
           cancelSort: '取消排序'
@@ -274,13 +296,6 @@ const CryptoList = () => {
       >
         <AddTransactionForm onSuccess={() => setIsAddTransactionModalVisible(false)} />
       </Modal>
-      
-      <EditPriceModal
-        visible={isEditPriceModalVisible}
-        onCancel={handleCloseEditPriceModal}
-        crypto={selectedCryptoForEdit}
-      />
-      
       {/* 隐藏的文件输入元素 */}
       <input
         type="file"

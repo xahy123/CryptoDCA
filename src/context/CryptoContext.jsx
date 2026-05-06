@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useReducer, useEffect, useState, useRef } from 'react';
 import { calculateCryptoStats, addTransaction, createCryptoData } from '../models/CryptoData';
-import { fetchCryptoCurrencies, fetchTokenPrice, searchCryptoCurrencies } from '../services/RelayApiService';
+import {
+  fetchCryptoCurrencies,
+  fetchTokenPrice,
+  fetchTokenPrices,
+  searchCryptoCurrencies,
+} from '../services/CoinGeckoApiService';
 
 // 创建Context
 const CryptoContext = createContext();
@@ -38,9 +43,12 @@ function cryptoReducer(state, action) {
         Date.now().toString(),
         action.payload.name,
         action.payload.symbol,
-        action.payload.address,
-        action.payload.chainId,
-        action.payload.isCustom || false,
+        {
+          coingeckoId: action.payload.coingeckoId,
+          image: action.payload.image,
+          marketCapRank: action.payload.marketCapRank,
+          currentPrice: action.payload.currentPrice,
+        },
       );
       console.log('添加的加密货币数据:', newCrypto);
       return {
@@ -152,7 +160,19 @@ function cryptoReducer(state, action) {
 export function CryptoProvider({ children }) {
   const [state, dispatch] = useReducer(cryptoReducer, initialState);
   const [isLoadingTokens, setIsLoadingTokens] = useState(false);
+  const [hasLoadedStorage, setHasLoadedStorage] = useState(false);
   const hasAutoUpdatedRef = useRef(false); // 标记是否已经执行过自动更新
+
+  const loadTokensFromApi = async () => {
+    const tokens = await fetchCryptoCurrencies();
+    return tokens.filter((token, index, self) =>
+      index === self.findIndex(t =>
+        t.id === token.id &&
+        t.name === token.name &&
+        t.symbol === token.symbol
+      )
+    );
+  };
   
   // 从本地存储加载数据
   useEffect(() => {
@@ -165,6 +185,8 @@ export function CryptoProvider({ children }) {
         }
       } catch (error) {
         console.error('Failed to load data from localStorage:', error);
+      } finally {
+        setHasLoadedStorage(true);
       }
     };
     
@@ -178,17 +200,7 @@ export function CryptoProvider({ children }) {
       dispatch({ type: ActionTypes.SET_LOADING, payload: true });
       
       try {
-        const tokens = await fetchCryptoCurrencies();
-        // 数组对象去重，如果所有属性相等
-        const uniqueTokens = tokens.filter((token, index, self) =>
-          index === self.findIndex(t => 
-            t.id === token.id &&
-            t.name === token.name &&
-            t.symbol === token.symbol &&
-            t.address === token.address &&
-            t.chainId === token.chainId
-          )
-        );
+        const uniqueTokens = await loadTokensFromApi();
         dispatch({ type: ActionTypes.SET_API_TOKENS, payload: uniqueTokens });
       } catch (error) {
         console.error('Failed to load tokens from API:', error);
@@ -207,15 +219,40 @@ export function CryptoProvider({ children }) {
   
   // 保存数据到本地存储
   useEffect(() => {
+    if (!hasLoadedStorage) {
+      return;
+    }
+
     if (state.cryptoList.length > 0) {
       localStorage.setItem('cryptoDcaData', JSON.stringify(state.cryptoList));
+    } else {
+      localStorage.removeItem('cryptoDcaData');
     }
-  }, [state.cryptoList]);
+  }, [hasLoadedStorage, state.cryptoList]);
 
   // 提供给组件使用的方法
-  const addCrypto = (name, symbol, address = '', chainId = '', isCustom = false) => {
-    console.log('添加的加密货币数据:', name, symbol, address, chainId, isCustom);
-    dispatch({ type: ActionTypes.ADD_CRYPTO, payload: { name, symbol, address, chainId, isCustom } });
+  const addCrypto = async (name, symbol, options = {}) => {
+    console.log('添加的加密货币数据:', name, symbol, options);
+    const payload = { name, symbol, ...options };
+
+    if (payload.coingeckoId && typeof payload.currentPrice !== 'number') {
+      dispatch({ type: ActionTypes.SET_LOADING, payload: true });
+      try {
+        payload.currentPrice = await fetchTokenPrice(payload.coingeckoId);
+        dispatch({ type: ActionTypes.SET_ERROR, payload: null });
+      } catch (error) {
+        console.error(`Failed to fetch initial price for ${payload.coingeckoId}:`, error);
+        payload.currentPrice = 0;
+        dispatch({
+          type: ActionTypes.SET_ERROR,
+          payload: `已添加 ${symbol}，但暂时无法获取初始价格，可稍后点击更新全部价格`
+        });
+      } finally {
+        dispatch({ type: ActionTypes.SET_LOADING, payload: false });
+      }
+    }
+
+    dispatch({ type: ActionTypes.ADD_CRYPTO, payload });
   };
   
   const updateCrypto = (crypto) => {
@@ -237,6 +274,14 @@ export function CryptoProvider({ children }) {
       if (!crypto) {
         throw new Error('找不到加密货币');
       }
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error('交易数量必须大于0');
+      }
+
+      if (!Number.isFinite(cost) || cost < 0) {
+        throw new Error('花费金额不能小于0');
+      }
       
       // 根据花费金额和数量计算价格
       const price = cost / amount;
@@ -257,10 +302,28 @@ export function CryptoProvider({ children }) {
   };
   
   // 搜索代币
-  const searchTokens = (query) => {
+  const searchTokens = async (query) => {
     dispatch({ type: ActionTypes.SET_SEARCH_QUERY, payload: query });
-    const filtered = searchCryptoCurrencies(state.apiTokens, query);
-    dispatch({ type: ActionTypes.SET_FILTERED_TOKENS, payload: filtered });
+    dispatch({ type: ActionTypes.SET_LOADING, payload: true });
+    try {
+      const filtered = await searchCryptoCurrencies(query);
+      dispatch({ type: ActionTypes.SET_FILTERED_TOKENS, payload: filtered });
+      dispatch({ type: ActionTypes.SET_ERROR, payload: null });
+    } catch (error) {
+      console.error('Failed to search CoinGecko tokens:', error);
+      dispatch({
+        type: ActionTypes.SET_ERROR,
+        payload: '无法搜索CoinGecko币种'
+      });
+    } finally {
+      dispatch({ type: ActionTypes.SET_LOADING, payload: false });
+    }
+  };
+
+  const refreshApiTokens = async () => {
+    const uniqueTokens = await loadTokensFromApi();
+    dispatch({ type: ActionTypes.SET_API_TOKENS, payload: uniqueTokens });
+    return uniqueTokens;
   };
   
   // 从API获取代币价格并更新
@@ -268,11 +331,11 @@ export function CryptoProvider({ children }) {
     try {
       dispatch({ type: ActionTypes.SET_LOADING, payload: true });
       const crypto = state.cryptoList.find(c => c.id === cryptoId);
-      if (!crypto || !crypto.address) {
-        throw new Error('找不到加密货币或地址信息');
+      if (!crypto || !crypto.coingeckoId) {
+        throw new Error('找不到加密货币或CoinGecko ID');
       }
       console.log('更新前的加密货币数据:', crypto);
-      const price = await fetchTokenPrice(crypto.address, crypto.chainId);
+      const price = await fetchTokenPrice(crypto.coingeckoId);
       updatePrice(cryptoId, price);
     } catch (error) {
       console.error('Failed to update price from API:', error);
@@ -289,40 +352,33 @@ export function CryptoProvider({ children }) {
   const updateAllPricesFromApi = async () => {
     try {
       dispatch({ type: ActionTypes.SET_LOADING, payload: true });
-      const cryptosWithAddress = state.cryptoList.filter(crypto => crypto.address);
+      const cryptosWithCoinGeckoId = state.cryptoList.filter(crypto => crypto.coingeckoId);
       
-      if (cryptosWithAddress.length === 0) {
+      if (cryptosWithCoinGeckoId.length === 0) {
         dispatch({ 
           type: ActionTypes.SET_ERROR, 
-          payload: '没有可更新价格的代币（缺少地址信息）' 
+          payload: '没有可更新价格的代币（缺少CoinGecko ID）' 
         });
         return;
       }
       
-      // 并发获取所有代币价格
-      const pricePromises = cryptosWithAddress.map(async (crypto) => {
-        try {
-          const price = await fetchTokenPrice(crypto.address, crypto.chainId);
-          return { id: crypto.id, price };
-        } catch (error) {
-          console.error(`Failed to update price for ${crypto.symbol}:`, error);
-          return null;
-        }
-      });
-      
-      const results = await Promise.all(pricePromises);
-      const successfulUpdates = results.filter(result => result !== null);
+      const prices = await fetchTokenPrices(cryptosWithCoinGeckoId.map(crypto => crypto.coingeckoId));
+      const successfulUpdates = cryptosWithCoinGeckoId
+        .map(crypto => ({ id: crypto.id, price: prices[crypto.coingeckoId] }))
+        .filter(result => typeof result.price === 'number');
       
       // 批量更新价格
       successfulUpdates.forEach(({ id, price }) => {
         updatePrice(id, price);
       });
       
-      if (successfulUpdates.length < cryptosWithAddress.length) {
+      if (successfulUpdates.length < cryptosWithCoinGeckoId.length) {
         dispatch({ 
           type: ActionTypes.SET_ERROR, 
-          payload: `部分代币价格更新失败，成功更新 ${successfulUpdates.length}/${cryptosWithAddress.length} 个代币` 
+          payload: `部分代币价格更新失败，成功更新 ${successfulUpdates.length}/${cryptosWithCoinGeckoId.length} 个代币` 
         });
+      } else {
+        dispatch({ type: ActionTypes.SET_ERROR, payload: null });
       }
     } catch (error) {
       console.error('Failed to update all prices:', error);
@@ -339,8 +395,8 @@ export function CryptoProvider({ children }) {
   useEffect(() => {
     // 当cryptoList有数据且未执行过自动更新时执行
     if (!hasAutoUpdatedRef.current && state.cryptoList.length > 0) {
-      const cryptosWithAddress = state.cryptoList.filter(crypto => crypto.address);
-      if (cryptosWithAddress.length > 0) {
+      const cryptosWithCoinGeckoId = state.cryptoList.filter(crypto => crypto.coingeckoId);
+      if (cryptosWithCoinGeckoId.length > 0) {
         console.log('自动更新所有代币价格...');
         hasAutoUpdatedRef.current = true; // 标记已执行
         updateAllPricesFromApi();
@@ -490,6 +546,7 @@ export function CryptoProvider({ children }) {
     updateAllPricesFromApi,
     addCryptoTransaction,
     searchTokens,
+    refreshApiTokens,
     exportData,
     importData,
   };
